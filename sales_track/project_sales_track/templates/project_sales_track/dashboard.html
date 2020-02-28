@@ -1,0 +1,455 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script>
+    $(document).ready(function(){
+        var rgba_color = ["rgba(255,0,0,0.8)","rgba(0,255,0,0.8)","rgba(0,0,255,0.8)","rgba(192,192,192,0.8)","rgba(255,255,0,0.8)","rgba(255,0,255,0.8)","rgba(253,255,51,0.8)"];
+        /* start ajax when document is ready */
+
+        /* ajax for showing bar graph */
+        $.ajax({
+            url: 'http://127.0.0.1:8000/login/ajax/return_bar_data',
+            success:function(data){
+                month_label = data[0];
+                device_labels = data[1];
+                monthly_data = data[2]
+                
+                var temp_data= []
+                var array_holder = []
+                var i =0
+                // device_labels.forEach(device =>{
+                //     monthly_data.forEach(sales => {
+                //         values = Object.values(sales)
+                //         values.forEach(sale_now => {
+                //             array_holder.push(sale_now.sales__sum)
+                //         });
+                //     });
+                for (var i=0;i<device_labels.length;i++)
+                {
+                    device = device_labels[i]
+                    temp_monthly_data = monthly_data[i];
+                    values = Object.values(temp_monthly_data);
+                    values.forEach(sale_now => {
+                        array_holder.push(sale_now);
+                    });
+                        /* this might throw error for multiple bar */
+                        temp_data.push({
+                        label : device,
+                        data : array_holder,
+                        backgroundColor :rgba_color[i],
+                    });
+                    array_holder = [];
+                }
+            var ctx = document.getElementById('myChart').getContext('2d');
+            var myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: month_label,
+                datasets: temp_data,
+            }
+            });
+            },
+            error:function(e){
+                console.log(e);
+            },
+        });
+        /* Ajax for showing bar graphs ends*/
+
+        /* ajax for showing pie chart */
+        $.ajax({
+            url : 'http://127.0.0.1:8000/login/ajax/return_pie_data',
+            success:function(data){
+                device_labels = data[0]
+                total_kg = data[1]
+                array_holder = []
+
+                for(i = 0;i<device_labels.length;i++){
+                    array_holder.push(total_kg[i].sales__sum)
+                }
+                // console.log(array_holder)
+
+                var ctxP = document.getElementById("pie-chart").getContext('2d');
+                var myPieChart = new Chart(ctxP, {
+                type: 'pie',
+                data: {
+                    labels: device_labels,
+                    datasets: [{
+                    data: array_holder,
+                    backgroundColor: ["#F7464A", "#46BFBD", "#FDB45C", "#949FB1", "#4D5360"],
+                    hoverBackgroundColor: ["#FF5A5E", "#5AD3D1", "#FFC870", "#A8B3C5", "#616774"]
+                    }]
+                },
+                options: {
+                    responsive: true
+                }
+                });
+            },
+            error:function(e){
+                console.log(e)
+            }
+        });
+        /* ajax for showing pie chart ends */
+
+        /* Document ready function ends */
+    });
+</script>
+
+{% extends 'project_sales_track/base.html' %}
+
+{% block content %}
+<div class="app-main__outer">
+    <div class="app-main__inner">
+        <div class="app-page-title">
+            <div class="page-title-wrapper">
+                <div class="page-title-heading">
+                    <div class="page-title-icon">
+                        <i class="pe-7s-car icon-gradient bg-mean-fruit"></i>
+                    </div>
+                    <div>Analytics Dashboard
+                        <div class="page-title-subheading">This is an example dashboard created using build-in elements and components.
+                        </div>
+                    </div>
+                </div>  
+            </div>
+        </div>            
+        <div class="row">
+            <div class="col-md-6 col-xl-4">
+                <div class="card mb-3 widget-content bg-midnight-bloom">
+                    <div class="widget-content-wrapper text-white">
+                        <div class="widget-content-left">
+                            <div class="widget-heading">Total Sell</div>
+                            <div class="widget-subheading">According to last 4 months</div>
+                        </div>
+                        <div class="widget-content-right">
+                            <div class="widget-numbers text-white">৳<span>{{total_sale}}</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-xl-4">
+                <div class="card mb-3 widget-content bg-arielle-smile">
+                    <div class="widget-content-wrapper text-white">
+                        <div class="widget-content-left">
+                            <div class="widget-heading">Sell Today</div>
+                            <div class="widget-subheading">Date:{{date_time}}</div>
+                        </div>
+                        <div class="widget-content-right">
+                            <div class="widget-numbers text-white"><span>৳ {{sold_today_taka}}</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-xl-4">
+                <div class="card mb-3 widget-content bg-grow-early">
+                    <div class="widget-content-wrapper text-white">
+                        <div class="widget-content-left">
+                            <div class="widget-heading">Total Amount Sold Today</div>
+                            <div class="widget-subheading">{% for each_device in devices %} {{each_device.device_label}} {% endfor %}</div>
+                        </div>
+                        <div class="widget-content-right">
+                            <div class="widget-numbers text-white"><span>{{sold_today}} KG</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="d-xl-none d-lg-block col-md-6 col-xl-4">
+                <div class="card mb-3 widget-content bg-premium-dark">
+                    <div class="widget-content-wrapper text-white">
+                        <div class="widget-content-left">
+                            <div class="widget-heading">Products Sold</div>
+                            <div class="widget-subheading">Revenue streams</div>
+                        </div>
+                        <div class="widget-content-right">
+                            <div class="widget-numbers text-warning"><span>$14M</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12 col-lg-6">
+                <div class="mb-3 card">
+                    <div class="card-header-tab card-header-tab-animation card-header">
+                        <div class="card-header-title">
+                            <i class="header-icon lnr-apartment icon-gradient bg-love-kiss"> </i>
+                            Sales Report
+                        </div>
+                        <ul class="nav">
+                            <li class="nav-item"><a href="javascript:void(0);" class="active nav-link">Last 4 months</a></li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="tabs-eg-77">
+                                <div class="card mb-3 widget-chart widget-chart2 text-left w-100">
+                                    <div class="widget-chat-wrapper-outer">
+                                        <div class="widget-chart-wrapper widget-chart-wrapper-lg opacity-10 m-0">
+                                            <canvas id="myChart">
+                                                <!-- HERE GOES THE BAR CHART -->
+                                            </canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                <h6 class="text-muted text-uppercase font-size-md opacity-5 font-weight-normal">Your Top Selling Devices: Today</h6>
+                                <div class="scroll-area-sm">
+                                    <div class="scrollbar-container">
+                                        <ul class="rm-list-borders rm-list-borders-scroll list-group list-group-flush">
+                                            {% for key,val in selling_today.items %}
+                                            <li class="list-group-item">
+                                                <div class="widget-content p-0">
+                                                    <div class="widget-content-wrapper">
+                                                        <div class="widget-content-left">
+                                                            <div class="widget-heading">{{key}}</div>
+                                                            <div class="widget-subheading"></div>
+                                                        </div>
+                                                        <div class="widget-content-right">
+                                                            <div class="font-size-xlg text-muted">
+                                                                <small class="opacity-5 pr-1"></small>
+                                                                <span>{{val}} KG</span>
+                                                                <small class="text-danger pl-2">
+                                                                    <!-- <i class="fa fa-angle-down"></i> -->
+                                                                </small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-12 col-lg-6">
+                <div class="mb-3 card">
+                    <div class="card-header-tab card-header">
+                        <div class="card-header-title">
+                            <i class="header-icon lnr-rocket icon-gradient bg-tempting-azure"> </i>
+                            Contribution of devices
+                        </div>
+                        <div class="btn-actions-pane-right">
+                            <div class="nav">
+                                <a href="javascript:void(0);" class="border-0 btn-pill btn-wide btn-transition active btn btn-outline-alternate">Tab 1</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-content">
+                        <div class="tab-pane fade active show" id="tab-eg-55">
+                            <div class="widget-chart p-3">
+                                <div style="height: 350px">
+                                    <canvas id="pie-chart"></canvas>
+                                </div>
+                                <div class="widget-chart-content text-center mt-5">
+                                    <div class="widget-description mt-0 text-warning">
+                                        <i class="fa fa-arrow-left"></i>
+                                        <span class="pl-1">53%</span>
+                                        <span class="text-muted opacity-8 pl-1">More coutribution for device: Kalo-jam</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 col-xl-4">
+                <div class="card mb-3 widget-content">
+                    <div class="widget-content-outer">
+                        <div class="widget-content-wrapper">
+                            <div class="widget-content-left">
+                                <div class="widget-heading"> Most Selling Item</div>
+                                <div class="widget-subheading">According to last 4 month</div>
+                            </div>
+                            <div class="widget-content-right">
+                                <div class="widget-numbers text-success">{{four_month_device}}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-xl-4">
+                <div class="card mb-3 widget-content">
+                    <div class="widget-content-outer">
+                        <div class="widget-content-wrapper">
+                            <div class="widget-content-left">
+                                <div class="widget-heading">Sold</div>
+                                <div class="widget-subheading">{{four_month_device}} Sold</div>
+                            </div>
+                            <div class="widget-content-right">
+                                <div class="widget-numbers text-warning">{{four_month_value}} KG</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="main-card mb-3 card">
+                    <div class="card-header">Top Seller
+                        <div class="btn-actions-pane-right">
+                            <div role="group" class="btn-group-sm btn-group">
+                                <button class="active btn btn-focus">Last Week</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="align-middle mb-0 table table-borderless table-striped table-hover">
+                            <thead>
+                            <tr>
+                                <th class="text-center">#</th>
+                                <th>Name</th>
+                                <th class="text-center">Item</th>
+                                <th class="text-center">Sold</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td class="text-center text-muted">#345</td>
+                                <td>
+                                    <div class="widget-content p-0">
+                                        <div class="widget-content-wrapper">
+                                            <div class="widget-content-left mr-3">
+                                                <div class="widget-content-left">
+                                                    <img width="40" class="rounded-circle" src="assets/images/avatars/4.jpg" alt="">
+                                                </div>
+                                            </div>
+                                            <div class="widget-content-left flex2">
+                                                <div class="widget-heading">John Doe</div>
+                                                <div class="widget-subheading opacity-7">Web Developer</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center">Madrid</td>
+                                <td class="text-center">
+                                    <div class="badge badge-warning">Pending</div>
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" id="PopoverCustomT-1" class="btn btn-primary btn-sm">Details</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-center text-muted">#347</td>
+                                <td>
+                                    <div class="widget-content p-0">
+                                        <div class="widget-content-wrapper">
+                                            <div class="widget-content-left mr-3">
+                                                <div class="widget-content-left">
+                                                    <img width="40" class="rounded-circle" src="assets/images/avatars/3.jpg" alt="">
+                                                </div>
+                                            </div>
+                                            <div class="widget-content-left flex2">
+                                                <div class="widget-heading">Ruben Tillman</div>
+                                                <div class="widget-subheading opacity-7">Etiam sit amet orci eget</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center">Berlin</td>
+                                <td class="text-center">
+                                    <div class="badge badge-success">Completed</div>
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" id="PopoverCustomT-2" class="btn btn-primary btn-sm">Details</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-center text-muted">#321</td>
+                                <td>
+                                    <div class="widget-content p-0">
+                                        <div class="widget-content-wrapper">
+                                            <div class="widget-content-left mr-3">
+                                                <div class="widget-content-left">
+                                                    <img width="40" class="rounded-circle" src="assets/images/avatars/2.jpg" alt="">
+                                                </div>
+                                            </div>
+                                            <div class="widget-content-left flex2">
+                                                <div class="widget-heading">Elliot Huber</div>
+                                                <div class="widget-subheading opacity-7">Lorem ipsum dolor sic</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center">London</td>
+                                <td class="text-center">
+                                    <div class="badge badge-danger">In Progress</div>
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" id="PopoverCustomT-3" class="btn btn-primary btn-sm">Details</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-center text-muted">#55</td>
+                                <td>
+                                    <div class="widget-content p-0">
+                                        <div class="widget-content-wrapper">
+                                            <div class="widget-content-left mr-3">
+                                                <div class="widget-content-left">
+                                                    <img width="40" class="rounded-circle" src="assets/images/avatars/1.jpg" alt=""></div>
+                                            </div>
+                                            <div class="widget-content-left flex2">
+                                                <div class="widget-heading">Vinnie Wagstaff</div>
+                                                <div class="widget-subheading opacity-7">UI Designer</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center">Amsterdam</td>
+                                <td class="text-center">
+                                    <div class="badge badge-info">On Hold</div>
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" id="PopoverCustomT-4" class="btn btn-primary btn-sm">Details</button>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="app-wrapper-footer">
+        <div class="app-footer">
+            <div class="app-footer__inner">
+                <div class="app-footer-left">
+                    <ul class="nav">
+                        <li class="nav-item">
+                            <a href="javascript:void(0);" class="nav-link">
+                                Footer Link 1
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="javascript:void(0);" class="nav-link">
+                                Footer Link 2
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="app-footer-right">
+                    <ul class="nav">
+                        <li class="nav-item">
+                            <a href="javascript:void(0);" class="nav-link">
+                                Footer Link 3
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="javascript:void(0);" class="nav-link">
+                                <div class="badge badge-success mr-1 ml-0">
+                                    <small>NEW</small>
+                                </div>
+                                Footer Link 4
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>    
+</div>
+{% endblock content%}

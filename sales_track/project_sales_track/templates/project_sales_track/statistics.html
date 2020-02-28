@@ -1,0 +1,84 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script>
+    $(document).ready(function(){
+        $.ajax({
+            url: 'http://127.0.0.1:8000/login/ajax/return_data_for_statistics',
+            success:function(data){
+                months = data[0];
+                canvas_ids = data[1];
+                real_data = data[2];
+                predicted_data = data[3];
+                var i = 0
+                canvas_ids.forEach(canvas_id => {
+                    temp_real_data = $.map(real_data[i], function(value, key) { return value });
+                    temp_predicted_data = $.map(predicted_data[i], function(value, key) { return value });
+
+                    var ctxL = document.getElementById(canvas_id).getContext('2d');
+                    var myLineChart = new Chart(ctxL, {
+                            type: 'line',
+                            data: {
+                                labels: months,
+                                datasets: [
+                                    {
+                                        label: "Real Data For Previous Year",
+                                        data: temp_real_data,
+                                        backgroundColor: ['rgba(105, 0, 132, .2)'],
+                                        borderColor: ['rgba(200, 99, 132, .7)'],
+                                        borderWidth: 2
+                                    },
+                                    {
+                                        label: "Predicted Data For Upcoming Months",
+                                        data: temp_predicted_data,
+                                        backgroundColor: ['rgba(0, 137, 132, .2)'],
+                                        borderColor: ['rgba(0, 10, 130, .7)'],
+                                        borderWidth: 2
+                                    },
+                                ],
+                            },
+                            options: {
+                                responsive: true,
+                            }
+                    });
+                    i = i + 1
+                });
+
+            },
+            error:function(e){
+                console.log(e)
+            },
+        });
+    });
+    </script>
+
+
+{% extends 'project_sales_track/base.html' %}
+{% block content %}
+<div class="app-main__outer">
+    <div class="app-main__inner">
+        <div class="app-page-title">
+            <div class="page-title-wrapper">
+                <div class="page-title-heading">
+                    <div class="page-title-icon">
+                        <i class="pe-7s-car icon-gradient bg-mean-fruit"></i>
+                    </div>
+                    <div>Analytics Dashboard
+                        <div class="page-title-subheading">This is an example dashboard created using build-in elements and components.
+                        </div>
+                    </div>
+                </div>  
+            </div>
+        </div>
+        <!-- NEXT CHART GOES HERE -->
+        <div class="containter">
+            {% for each_device in devices %}
+                <b>{{each_device.device_label}}</b>
+            <div class="col-md-8">
+                <canvas id={{each_device.id}}></canvas>
+            </div>
+            <br><br>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock content %}
